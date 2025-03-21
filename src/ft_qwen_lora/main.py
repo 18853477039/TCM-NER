@@ -11,6 +11,9 @@ import transformers
 from sklearn.metrics import f1_score
 from transformers import HfArgumentParser, AutoTokenizer, set_seed, Seq2SeqTrainingArguments, AutoModelForCausalLM, DataCollatorForSeq2Seq, Seq2SeqTrainer
 
+import sys
+sys.path.append("./")
+
 from src.ft_qwen_lora.arguments import ModelArguments, DataTrainingArguments
 
 logger = logging.getLogger(__name__)
@@ -45,7 +48,7 @@ def main():
 
     # Log on each process the small summary:
     logger.warning(
-        f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
+        f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu} "
         + f"distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}"
     )
     logger.info(f"Training/evaluation parameters {training_args}")
@@ -81,16 +84,16 @@ def main():
         model = PeftModel.from_pretrained(model, model_args.peft_path)
     else:
         logger.info("Init new peft model")
-        target_modules = model_args.trainable.split(',')
+        # target_modules = model_args.trainable.split(',')
         modules_to_save = model_args.modules_to_save.split(',') if model_args.modules_to_save != "null" else None
         lora_rank = model_args.lora_rank
         lora_dropout = model_args.lora_dropout
         lora_alpha = model_args.lora_alpha
-        print(target_modules)
+        # print(target_modules)
         print(lora_rank)
         peft_config = LoraConfig(
             task_type=TaskType.CAUSAL_LM,
-            target_modules=target_modules,
+            # target_modules=target_modules if target_modules != "null" else None,
             inference_mode=False if training_args.do_train else True,
             r=lora_rank, lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
@@ -124,7 +127,7 @@ def main():
     max_target_length = data_args.max_target_length
 
     def preprocess_function_train(examples):
-        max_seq_length = data_args.max_source_length + data_args.max_target_length
+        max_seq_length = min(data_args.max_source_length + data_args.max_target_length, 2048)
 
         model_inputs = {
             "input_ids": [],
@@ -134,31 +137,27 @@ def main():
             if examples[prompt_column][i] and examples[response_column][i]:
                 query, answer = examples[prompt_column][i], examples[response_column][i]
                 prompt = prefix + query
-                a_ids = tokenizer.encode(text=prompt, add_special_tokens=False)
-                b_ids = tokenizer.encode(text=answer, add_special_tokens=False)
 
-                if len(a_ids) > data_args.max_source_length - 1:
-                    a_ids = a_ids[: data_args.max_source_length - 1]
+                # 编码输入和输出
+                inputs = tokenizer(
+                    prompt,
+                    max_length=data_args.max_source_length,
+                    truncation=True,
+                    padding="max_length",
+                )
+                labels = tokenizer(
+                    answer,
+                    max_length=data_args.max_target_length,
+                    truncation=True,
+                    padding="max_length",
+                )["input_ids"]
 
-                if len(b_ids) > data_args.max_target_length - 2:
-                    b_ids = b_ids[: data_args.max_target_length - 2]
-
-                input_ids = tokenizer.build_inputs_with_special_tokens(a_ids, b_ids)
-
-                context_length = input_ids.index(tokenizer.bos_token_id)
-                mask_position = context_length - 1
-                labels = [-100] * context_length + input_ids[mask_position + 1:]
-
-                pad_len = max_seq_length - len(input_ids)
-                input_ids = input_ids + [tokenizer.pad_token_id] * pad_len
-                labels = labels + [tokenizer.pad_token_id] * pad_len
-                # print("input_ids: ", len(input_ids))
-                # print("labels: ", len(labels))
-
+                # 忽略填充部分的损失
                 if data_args.ignore_pad_token_for_loss:
                     labels = [(l if l != tokenizer.pad_token_id else -100) for l in labels]
 
-                model_inputs["input_ids"].append(input_ids)
+                # 添加到 model_inputs
+                model_inputs["input_ids"].append(inputs["input_ids"])
                 model_inputs["labels"].append(labels)
 
         return model_inputs
@@ -194,7 +193,7 @@ def main():
         print("input_ids: ", example["input_ids"])
         print("inputs: ", tokenizer.decode(example["input_ids"]))
         print("label_ids: ", example["labels"])
-        print("labels: ", tokenizer.decode(example["labels"]))
+        print("labels: ", tokenizer.decode([token_id for token_id in example["labels"] if token_id != -100]))
 
     if training_args.do_train:
         if "train" not in raw_datasets:
