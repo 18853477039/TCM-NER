@@ -1,0 +1,10 @@
+{"input": "中医药命名实体识别: \n投活络效灵丹加味：当归、丹参各１５ｇ，生乳香、生没药各６ｇ，柴胡１２ｇ，白芍、黄芩、大黄各１０ｇ，蒲公英３０ｇ，甘草５ｇ\n答：", "target": "上述句子中的实体包含：\n中药实体：当归，丹参，生乳香，生没药，柴胡，黄芩，大黄，蒲公英，甘草\n方剂实体：活络效灵丹", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-0"}
+{"input": "中医药命名实体识别: \n目的补气健脾升清法治疗糖尿病性功能性消化不良的临床效果\n答：", "target": "上述句子中的实体包含：\n西医诊断实体：糖尿病性功能性消化不良", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-1"}
+{"input": "中医药命名实体识别: \n结论温脾散穴位敷贴联合理中复元方可改善脾虚痰瘀型慢性萎缩性胃炎患者临床症状（尤其是胃窦大弯侧、胃体小弯侧萎缩），值得推广应用\n答：", "target": "上述句子中的实体包含：\n中医治疗实体：温脾散穴位敷贴\n中医证候实体：脾虚痰瘀\n西医诊断实体：慢性萎缩性胃炎", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-2"}
+{"input": "中医药命名实体识别: \n完带汤治疗肠道易激综合征６０例\n答：", "target": "上述句子中的实体包含：\n西医诊断实体：肠道易激综合征\n方剂实体：完带汤", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-3"}
+{"input": "中医药命名实体识别: \n结论：辨证针刺治疗ＦＤ能明显改善患者的生活质量，为治疗ＦＤ的有效方法\n答：", "target": "上述句子中的实体包含：\n中医治疗实体：辨证针刺", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-4"}
+{"input": "中医药命名实体识别: \n五花芍草加味汤；心理干预；功能性消化不良\n答：", "target": "上述句子中的实体包含：\n其他治疗实体：心理干预\n西医诊断实体：功能性消化不良", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-5"}
+{"input": "中医药命名实体识别: \n中西医结合治疗胃食管反流病４５例临床疗效观察\n答：", "target": "上述句子中的实体包含：\n西医诊断实体：胃食管反流病", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-6"}
+{"input": "中医药命名实体识别: \n中医药治疗慢性功能性便秘临床观察\n答：", "target": "上述句子中的实体包含：\n西医诊断实体：慢性功能性便秘", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-7"}
+{"input": "中医药命名实体识别: \n对照组给予加减黄芪汤治疗，观察组在对照组基础上联合食疗方法，比较两组患者疗效及治疗前后便秘相关临床症状及生活质量量表（ＰＡＣ－ＱＯＬ）评分\n答：", "target": "上述句子中的实体包含：\n其他治疗实体：食疗", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-8"}
+{"input": "中医药命名实体识别: \n０１），且治疗组腹痛和腹胀症状积分改善情况优于对照组（Ｐ＜０\n答：", "target": "上述句子中的实体包含：\n临床表现实体：腹痛，腹胀", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-9"}

@@ -1,0 +1,10 @@
+{"input": "中医药命名实体识别: \n药进１０帖，黄疸稍退，饮食稍增，精神稍振\n答：", "target": "上述句子中的实体包含：\n中医诊断实体：黄疸", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-0"}
+{"input": "中医药命名实体识别: \n加味左金丸联合法莫替丁治疗胃食管反流病临床观察\n答：", "target": "上述句子中的实体包含：\n西医诊断实体：胃食管反流病\n西医治疗实体：法莫替丁", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-1"}
+{"input": "中医药命名实体识别: \n“疏肝行气，调神解郁”推拿法结合西药治疗腹泻型ＩＢＳ的临床疗效\n答：", "target": "上述句子中的实体包含：\n中医治疗实体：推拿\n中医治则实体：疏肝行气，调神解郁\n临床表现实体：腹泻", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-2"}
+{"input": "中医药命名实体识别: \n服上方７剂后腹痛渐减，大便日行一次已成形，续治一月诸症消失\n答：", "target": "上述句子中的实体包含：\n临床表现实体：腹痛", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-3"}
+{"input": "中医药命名实体识别: \n方法采用随机数字表将１６０例功能性便秘患者随机分为２组，试验组与对照组各８０例，对照组予以乳果糖治疗，试验组则判断患者的中医证型，予以采用相应的中药汤剂联合中医特色疗法，疗程为８周\n答：", "target": "上述句子中的实体包含：\n西医诊断实体：功能性便秘", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-4"}
+{"input": "中医药命名实体识别: \n二诊（８月２２日）：睡眠改善，夜寐５～６小时，间醒２～３次，头晕、心烦缓解，晨起眼睑虚浮，口干，腹胀胁满，纳稍增，大便溏薄，日行２～３次，双下肢浮肿（＋），舌苔薄黄腻，质暗红，脉细微弦\n答：", "target": "上述句子中的实体包含：\n临床表现实体：头晕，腹胀胁满，大便溏薄，舌苔薄黄腻，脉细微弦", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-5"}
+{"input": "中医药命名实体识别: \n目的：探讨七方胃痛胶囊治疗肝郁脾虚型功能消化不良的效果\n答：", "target": "上述句子中的实体包含：\n中医治疗实体：七方胃痛胶囊\n中医证候实体：肝郁脾虚", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-6"}
+{"input": "中医药命名实体识别: \n肠易激综合征；腹泻；中药疗法；拔罐疗法\n答：", "target": "上述句子中的实体包含：\n临床表现实体：腹泻", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-7"}
+{"input": "中医药命名实体识别: \n目的：观察枳术丸加味治疗２型糖尿病功能性便秘的临床疗效\n答：", "target": "上述句子中的实体包含：\n方剂实体：枳术丸加味", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-8"}
+{"input": "中医药命名实体识别: \n生物反馈训练配合针刺；功能性便秘；疗效分析\n答：", "target": "上述句子中的实体包含：\n西医诊断实体：功能性便秘", "task_type": "ner", "task_dataset": "MEDICAL", "sample_id": "train-9"}
