@@ -12,6 +12,7 @@ from sklearn.metrics import f1_score
 from transformers import HfArgumentParser, AutoTokenizer, set_seed, Seq2SeqTrainingArguments, AutoModelForCausalLM, DataCollatorForSeq2Seq, Seq2SeqTrainer
 
 import sys
+
 sys.path.append("./")
 
 from src.ft_qwen_lora.arguments import ModelArguments, DataTrainingArguments
@@ -28,6 +29,27 @@ def main():
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
+    # model_args = ModelArguments(
+    #     model_name_or_path='/Users/jishoukai/.cache/huggingface/hub/models--Qwen--Qwen1.5-0.5B/snapshots/8f445e3628f3500ee69f24e1303c9f10f5342a39',
+    #     ptuning_checkpoint=None, config_name=None, tokenizer_name=None, cache_dir='/Users/jishoukai/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4/',
+    #     use_fast_tokenizer=True,
+    #     model_revision='main', use_auth_token=False, resize_position_embeddings=None, quantization_bit=None, pre_seq_len=None, prefix_projection=False,
+    #     trainable='q_proj,v_proj', lora_rank=8, lora_dropout=0.1, lora_alpha=32.0, modules_to_save='null', debug_mode=False,
+    #     # peft_path=None,
+    #     peft_path='/Users/jishoukai/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4/checkpoint-50'
+    # )
+    # data_args = DataTrainingArguments(lang=None, dataset_name=None, dataset_config_name=None, prompt_column='input', response_column='target',
+    #                                   history_column=None, train_file='/Users/jishoukai/PycharmProjects/TCM-NER/datasets/toys/train.jsonl',
+    #                                   validation_file='/Users/jishoukai/PycharmProjects/TCM-NER/datasets/toys/dev.jsonl',
+    #                                   test_file='/Users/jishoukai/PycharmProjects/TCM-NER/datasets/toys/test.jsonl'
+    #                                   , overwrite_cache=True, preprocessing_num_workers=4, max_source_length=128, max_target_length=64,
+    #                                   val_max_target_length=64, pad_to_max_length=False, max_train_samples=None, max_eval_samples=None,
+    #                                   max_predict_samples=None, num_beams=None, ignore_pad_token_for_loss=True, source_prefix='', forced_bos_token=None)
+    # training_args = Seq2SeqTrainingArguments(output_dir='/Users/jishoukai/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4/', overwrite_output_dir=True,
+    #                                          per_device_train_batch_size=4, per_device_eval_batch_size=4, gradient_accumulation_steps=1, max_steps=50,
+    #                                          logging_steps=10, save_steps=10, learning_rate=2e-4, fp16=False, do_train=False, do_eval=True, do_predict=True)
+    # print(data_args)
+    # print(training_args)
     # Setup logging
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -141,16 +163,19 @@ def main():
                 # 编码输入和输出
                 inputs = tokenizer(
                     prompt,
-                    max_length=data_args.max_source_length,
+                    max_length=max_seq_length,
                     truncation=True,
                     padding="max_length",
                 )
                 labels = tokenizer(
                     answer,
-                    max_length=data_args.max_target_length,
+                    max_length=max_seq_length,
                     truncation=True,
                     padding="max_length",
                 )["input_ids"]
+                if len(inputs["input_ids"]) != len(labels):
+                    print(len(inputs["input_ids"]), len(labels), len(inputs["input_ids"]))
+                assert len(inputs["input_ids"]) == len(labels), "Input IDs and Labels must have the same length"
 
                 # 忽略填充部分的损失
                 if data_args.ignore_pad_token_for_loss:
@@ -163,29 +188,37 @@ def main():
         return model_inputs
 
     def preprocess_function_eval(examples):
-        inputs, targets = [], []
+        max_seq_length = min(data_args.max_source_length + data_args.max_target_length, 2048)
+        model_inputs = {
+            "input_ids": [],
+            "labels": [],
+        }
         for i in range(len(examples[prompt_column])):
-            if not examples[response_column][i]:
-                targets.append("filled in !")
-            else:
-                targets.append(examples[response_column][i])
+            if examples[prompt_column][i] and examples[response_column][i]:
+                query, answer = examples[prompt_column][i], examples[response_column][i]
+                prompt = prefix + query
 
-            if examples[prompt_column][i]:
-                query = examples[prompt_column][i]
-                inputs.append(query)
+                # 编码输入和输出
+                inputs = tokenizer(
+                    prompt,
+                    max_length=max_seq_length,
+                    truncation=True,
+                    padding="max_length",
+                )
+                labels = tokenizer(
+                    answer,
+                    max_length=max_seq_length,
+                    truncation=True,
+                    padding="max_length",
+                )["input_ids"]
 
-        inputs = [prefix + inp for inp in inputs]
-        model_inputs = tokenizer(inputs,
-                                 max_length=data_args.max_source_length,
-                                 truncation=True,
-                                 padding=True)
-        labels = tokenizer(text_target=targets, max_length=max_target_length, truncation=True)
+                # 忽略填充部分的损失
+                if data_args.ignore_pad_token_for_loss:
+                    labels = [(l if l != tokenizer.pad_token_id else -100) for l in labels]
 
-        if data_args.ignore_pad_token_for_loss:
-            labels["input_ids"] = [
-                [(l if l != tokenizer.pad_token_id else -100) for l in label] for label in labels["input_ids"]
-            ]
-        model_inputs["labels"] = labels["input_ids"]
+                # 添加到 model_inputs
+                model_inputs["input_ids"].append(inputs["input_ids"])
+                model_inputs["labels"].append(labels)
 
         return model_inputs
 
@@ -203,6 +236,7 @@ def main():
             max_train_samples = min(len(train_dataset), data_args.max_train_samples)
             train_dataset = train_dataset.select(range(max_train_samples))
         with training_args.main_process_first(desc="train dataset map pre-processing"):
+            # preprocess_function_train(train_dataset)
             train_dataset = train_dataset.map(
                 preprocess_function_train,
                 batched=True,
@@ -272,6 +306,9 @@ def main():
         :return: 包含 F1 分数的字典。
         """
         predictions, label_ids = eval_preds
+        # 如果 predictions 是概率分布，使用 argmax 转换为 token ID
+        if isinstance(predictions, np.ndarray) and predictions.ndim == 3:
+            predictions = np.argmax(predictions, axis=-1)  # 转换为整数类型的 token ID
 
         # 将 predictions 和 label_ids 解码为文本
         decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
@@ -279,31 +316,40 @@ def main():
             # Replace -100 in the labels as we can't decode them.
             label_ids = np.where(label_ids != -100, label_ids, tokenizer.pad_token_id)
         decoded_labels = tokenizer.batch_decode(label_ids, skip_special_tokens=True)
+        def extract_entities(text):
+            entities = []
+            if not text:
+                return entities  # 如果文本为空，返回空列表
+
+            for line in text.split("\n"):
+                if line.startswith("上述句子中的实体包含："):
+                    continue
+                if "实体：" in line:
+                    entity_type, entity_values = line.split("实体：")
+                    for value in entity_values.split("，"):
+                        if value.strip():
+                            entities.append({"type": entity_type.strip(), "value": value.strip()})
+            return entities
 
         # 计算基于词的 F1 分数
         def compute_word_f1(preds, labels):
-            # 将生成文本转换为实体列表
-            def extract_entities(text):
-                entities = []
-                for line in text.split("\n"):
-                    if line.startswith("上述句子中的实体包含："):
-                        continue
-                    if "实体：" in line:
-                        entity_type, entity_values = line.split("实体：")
-                        for value in entity_values.split("，"):
-                            if value.strip():
-                                entities.append({"type": entity_type.strip(), "value": value.strip()})
-                return entities
+            try:
+                # 提取真实标签和预测标签
+                true_entities = extract_entities(labels)
+                pred_entities = extract_entities(preds)
 
-            # 提取真实标签和预测标签
-            true_entities = extract_entities(labels)
-            pred_entities = extract_entities(preds)
+                # 如果 pred_entities 为空，返回 F1 分数为 0
+                if not pred_entities:
+                    return 0.0
 
-            # 计算 Precision、Recall 和 F1 score
-            true_labels = [e["type"] for e in true_entities]
-            pred_labels = [e["type"] for e in pred_entities]
-            f1 = f1_score(true_labels, pred_labels, average="weighted")
-            return f1
+                # 计算 Precision、Recall 和 F1 score
+                true_labels = [e["value"] for e in true_entities]
+                pred_labels = [e["value"] for e in pred_entities]
+                f1 = f1_score(true_labels, pred_labels, average="weighted")
+                return f1
+            except Exception as e:
+                pass
+                return 0.0
 
         # 计算每个样本的 F1 分数
         f1_scores = [compute_word_f1(pred, label) for pred, label in zip(decoded_preds, decoded_labels)]
@@ -325,10 +371,10 @@ def main():
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
-        eval_dataset=eval_dataset,
+        eval_dataset=eval_dataset if training_args.do_eval else None,
         tokenizer=tokenizer,
         data_collator=data_collator,
-        compute_metrics=compute_metrics
+        compute_metrics=compute_metrics if training_args.do_eval else None,
     )
 
     # Training
