@@ -1,10 +1,11 @@
 lora_rank=8
-lora_trainable="query_key_value,dense,dense_h_to_4h,dense_4h_to_h"
+#lora_trainable="query_key_value,dense,dense_h_to_4h,dense_4h_to_h"
 modules_to_save="null"
 lora_dropout=0.1
 LR=2e-4
 model_name_or_path="/root/autodl-fs/data2/root/.cache/modelscope/hub/models--THUDM--ChatGLM-6B/snapshots/bf0f5cfb575eebebf9b655c5861177acfee03f16"   # LLM底座模型路径，或者是huggingface hub上的模型名称
-your_data_path="./datasets/trains/"  # 填入数据集所在的文件夹路径
+your_data_path="./datasets/sft/"  # 填入数据集所在的文件夹路径
+your_data_path="./datasets/toys/"  # 填入数据集所在的文件夹路径
 
 CHECKPOINT="/root/autodl-fs/data2/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4"   # 填入用来存储模型的文件夹路径
 
