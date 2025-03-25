@@ -9,7 +9,7 @@ your_data_path="./datasets/toys/"  # 填入数据集所在的文件夹路径
 
 CHECKPOINT="/root/autodl-fs/data2/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4"   # 填入用来存储模型的文件夹路径
 
-STEP=3500    # 用来评估的模型checkpoint是训练了多少步
+STEP=100    # 用来评估的模型checkpoint是训练了多少步
 
 CUDA_VISIBLE_DEVICES=0 python src/ft_qwen_lora/main.py \
     --do_eval \
@@ -26,7 +26,7 @@ CUDA_VISIBLE_DEVICES=0 python src/ft_qwen_lora/main.py \
     --overwrite_output_dir \
     --max_source_length 128 \
     --max_target_length 64 \
-    --per_device_eval_batch_size 12 \
+    --per_device_eval_batch_size 32 \
     --preprocessing_num_workers 12 \
     --report_to wandb
 
