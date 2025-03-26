@@ -8,8 +8,9 @@ from datasets import load_dataset
 from peft import LoraConfig, TaskType, get_peft_model, PeftModel
 
 import transformers
-from sklearn.metrics import f1_score
 from transformers import HfArgumentParser, AutoTokenizer, set_seed, Seq2SeqTrainingArguments, AutoModelForCausalLM, DataCollatorForSeq2Seq, Seq2SeqTrainer
+
+from sklearn.metrics import f1_score
 
 import sys
 
@@ -47,7 +48,7 @@ def main():
     #                                   max_predict_samples=None, num_beams=None, ignore_pad_token_for_loss=True, source_prefix='', forced_bos_token=None)
     # training_args = Seq2SeqTrainingArguments(output_dir='/Users/jishoukai/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4/', overwrite_output_dir=True,
     #                                          per_device_train_batch_size=4, per_device_eval_batch_size=4, gradient_accumulation_steps=1, max_steps=50,
-    #                                          logging_steps=10, save_steps=10, learning_rate=2e-4, fp16=False, do_train=True, do_eval=False, do_predict=False)
+    #                                          logging_steps=10, save_steps=10, learning_rate=2e-4, fp16=False, do_train=False, do_eval=True, do_predict=True)
     # print(data_args)
     # print(training_args)
     # Setup logging
@@ -160,7 +161,7 @@ def main():
         eos = tokenizer.eos_token_id
         pad = tokenizer.pad_token_id
 
-        max_seq_length = data_args.max_source_length + data_args.max_target_length + 1 # 保留给bos
+        total_length = data_args.max_source_length + data_args.max_target_length + 1  # +1 for eos
 
 
         for i in range(len(examples[prompt_column])):
@@ -185,10 +186,10 @@ def main():
                 # 5. 创建labels（-100表示忽略loss计算）
                 labels = [-100] * (len(a_ids) + 2) + b_ids + [eos]  # +2对应bos和第一个eos
 
-                pad_len = max_seq_length - len(input_ids)
+                pad_len = total_length - len(input_ids)
                 input_ids = input_ids + [pad] * pad_len
                 labels = labels + [-100] * pad_len  # 用-100填充标签的padding部分
-                attention_mask = [1] * (max_seq_length - pad_len) + [0] * pad_len  # 精确对应实际长度
+                attention_mask = [1] * (total_length - pad_len) + [0] * pad_len  # 精确对应实际长度
 
                 model_inputs["input_ids"].append(input_ids)
                 model_inputs["attention_mask"].append(attention_mask)
@@ -197,50 +198,65 @@ def main():
         return model_inputs
 
     def preprocess_function_eval(examples):
-        max_seq_length = min(data_args.max_source_length + data_args.max_target_length, 2048)
         model_inputs = {
             "input_ids": [],
-            "labels": [],
+            "attention_mask": [],
+            "labels": []
         }
+
+        # Qwen2特殊token处理（与train保持一致）
+        bos = tokenizer.eos_token_id
+        eos = tokenizer.eos_token_id
+        pad = tokenizer.pad_token_id
+
+        # 与train相同的长度计算逻辑
+        total_length = data_args.max_source_length + data_args.max_target_length + 1
+
         for i in range(len(examples[prompt_column])):
-            if examples[prompt_column][i] and examples[response_column][i]:
-                query, answer = examples[prompt_column][i], examples[response_column][i]
-                prompt = prefix + query
+            if examples[prompt_column][i]:
+                # 1. 构造输入（eval必须保留prompt）
+                prompt = prefix + examples[prompt_column][i]
+                a_ids = tokenizer.encode(prompt, add_special_tokens=False)
 
-                # 编码输入和输出
-                inputs = tokenizer(
-                    prompt,
-                    max_length=max_seq_length,
-                    truncation=True,
-                    padding="max_length",
-                )
-                labels = tokenizer(
-                    answer,
-                    max_length=max_seq_length,
-                    truncation=True,
-                    padding="max_length",
-                )["input_ids"]
+                # 2. 处理可能存在的response（评估时需要计算指标）
+                b_ids = []
+                if examples[response_column][i]:  # 有标签时处理
+                    b_ids = tokenizer.encode(examples[response_column][i], add_special_tokens=False)
 
-                # 忽略填充部分的损失
-                if data_args.ignore_pad_token_for_loss:
-                    labels = [(l if l != tokenizer.pad_token_id else -100) for l in labels]
+                # 3. 截断逻辑与train一致
+                max_a_len = data_args.max_source_length - 2
+                max_b_len = data_args.max_target_length - 1
+                a_ids = a_ids[:max_a_len]
+                b_ids = b_ids[:max_b_len] if b_ids else []
 
-                # 添加到 model_inputs
-                model_inputs["input_ids"].append(inputs["input_ids"])
+                # 4. 特殊token拼接（保持与train相同结构）
+                input_ids = [bos] + a_ids + [eos] + b_ids + [eos]
+
+                # 关键修改点：eval阶段始终保留labels（无response时为空）
+                labels = [-100] * (len(a_ids) + 2) + b_ids + [eos] if b_ids else [-100] * len(input_ids)
+
+                # 5. 填充处理
+                pad_len = total_length - len(input_ids)
+                input_ids = input_ids + [pad] * pad_len
+                labels = labels + [-100] * pad_len
+                attention_mask = [1] * (total_length - pad_len) + [0] * pad_len
+
+                model_inputs["input_ids"].append(input_ids)
+                model_inputs["attention_mask"].append(attention_mask)
                 model_inputs["labels"].append(labels)
 
         return model_inputs
 
-    # def print_dataset_example(example):
-    #     print("input_ids: ", example["input_ids"])
-    #     print("inputs: ", tokenizer.decode(example["input_ids"]))
-    #     print("label_ids: ", example["labels"])
-    #     print("labels: ", tokenizer.decode([token_id for token_id in example["labels"] if token_id != -100]))
     def print_dataset_example(example):
-        print("input_ids: ",example["input_ids"])
+        print("input_ids: ", example["input_ids"])
         print("inputs: ", tokenizer.decode(example["input_ids"]))
         print("label_ids: ", example["labels"])
-        print("labels: ", tokenizer.decode(example["labels"]))
+        print("labels: ", tokenizer.decode([token_id for token_id in example["labels"] if token_id != -100]))
+    # def print_dataset_example(example):
+    #     print("input_ids: ",example["input_ids"])
+    #     print("inputs: ", tokenizer.decode(example["input_ids"]))
+    #     print("label_ids: ", example["labels"])
+    #     print("labels: ", tokenizer.decode(example["labels"]))
 
     if training_args.do_train:
         if "train" not in raw_datasets:
@@ -419,7 +435,7 @@ def main():
     results = {}
     if training_args.do_eval:
         logger.info("*** Evaluate ***")
-        metrics = trainer.evaluate(metric_key_prefix="eval", do_sample=True, top_p=0.7, max_length=512, temperature=0.95)
+        metrics = trainer.evaluate(metric_key_prefix="eval", do_sample=True, top_p=0.7, max_length=128, temperature=0.95)
         max_eval_samples = data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
         metrics["eval_samples"] = min(max_eval_samples, len(eval_dataset))
 
