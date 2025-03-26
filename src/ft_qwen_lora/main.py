@@ -21,35 +21,35 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    # parser = HfArgumentParser((ModelArguments, DataTrainingArguments, Seq2SeqTrainingArguments))
-    # if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-    #     # If we pass only one argument to the script, and it's the path to a json file,
-    #     # let's parse it to get our arguments.
-    #     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
-    # else:
-    #     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, Seq2SeqTrainingArguments))
+    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+        # If we pass only one argument to the script, and it's the path to a json file,
+        # let's parse it to get our arguments.
+        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+    else:
+        model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-    model_args = ModelArguments(
-        model_name_or_path='/Users/jishoukai/.cache/huggingface/hub/models--Qwen--Qwen1.5-0.5B/snapshots/8f445e3628f3500ee69f24e1303c9f10f5342a39',
-        ptuning_checkpoint=None, config_name=None, tokenizer_name=None, cache_dir='/Users/jishoukai/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4/',
-        use_fast_tokenizer=True,
-        model_revision='main', use_auth_token=False, resize_position_embeddings=None, quantization_bit=None, pre_seq_len=None, prefix_projection=False,
-        trainable='q_proj,v_proj', lora_rank=8, lora_dropout=0.1, lora_alpha=32.0, modules_to_save='null', debug_mode=False,
-        # peft_path=None,
-        peft_path='/Users/jishoukai/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4/checkpoint-50'
-    )
-    data_args = DataTrainingArguments(lang=None, dataset_name=None, dataset_config_name=None, prompt_column='input', response_column='target',
-                                      history_column=None, train_file='/Users/jishoukai/PycharmProjects/TCM-NER/datasets/toys/train.jsonl',
-                                      validation_file='/Users/jishoukai/PycharmProjects/TCM-NER/datasets/toys/dev.jsonl',
-                                      test_file='/Users/jishoukai/PycharmProjects/TCM-NER/datasets/toys/test.jsonl'
-                                      , overwrite_cache=True, preprocessing_num_workers=4, max_source_length=128, max_target_length=64,
-                                      val_max_target_length=64, pad_to_max_length=False, max_train_samples=None, max_eval_samples=None,
-                                      max_predict_samples=None, num_beams=None, ignore_pad_token_for_loss=True, source_prefix='', forced_bos_token=None)
-    training_args = Seq2SeqTrainingArguments(output_dir='/Users/jishoukai/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4/', overwrite_output_dir=True,
-                                             per_device_train_batch_size=4, per_device_eval_batch_size=4, gradient_accumulation_steps=1, max_steps=50,
-                                             logging_steps=10, save_steps=10, learning_rate=2e-4, fp16=False, do_train=True, do_eval=False, do_predict=False)
-    print(data_args)
-    print(training_args)
+    # model_args = ModelArguments(
+    #     model_name_or_path='/Users/jishoukai/.cache/huggingface/hub/models--Qwen--Qwen1.5-0.5B/snapshots/8f445e3628f3500ee69f24e1303c9f10f5342a39',
+    #     ptuning_checkpoint=None, config_name=None, tokenizer_name=None, cache_dir='/Users/jishoukai/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4/',
+    #     use_fast_tokenizer=True,
+    #     model_revision='main', use_auth_token=False, resize_position_embeddings=None, quantization_bit=None, pre_seq_len=None, prefix_projection=False,
+    #     trainable='q_proj,v_proj', lora_rank=8, lora_dropout=0.1, lora_alpha=32.0, modules_to_save='null', debug_mode=False,
+    #     # peft_path=None,
+    #     peft_path='/Users/jishoukai/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4/checkpoint-50'
+    # )
+    # data_args = DataTrainingArguments(lang=None, dataset_name=None, dataset_config_name=None, prompt_column='input', response_column='target',
+    #                                   history_column=None, train_file='/Users/jishoukai/PycharmProjects/TCM-NER/datasets/toys/train.jsonl',
+    #                                   validation_file='/Users/jishoukai/PycharmProjects/TCM-NER/datasets/toys/dev.jsonl',
+    #                                   test_file='/Users/jishoukai/PycharmProjects/TCM-NER/datasets/toys/test.jsonl'
+    #                                   , overwrite_cache=True, preprocessing_num_workers=4, max_source_length=128, max_target_length=64,
+    #                                   val_max_target_length=64, pad_to_max_length=False, max_train_samples=None, max_eval_samples=None,
+    #                                   max_predict_samples=None, num_beams=None, ignore_pad_token_for_loss=True, source_prefix='', forced_bos_token=None)
+    # training_args = Seq2SeqTrainingArguments(output_dir='/Users/jishoukai/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4/', overwrite_output_dir=True,
+    #                                          per_device_train_batch_size=4, per_device_eval_batch_size=4, gradient_accumulation_steps=1, max_steps=50,
+    #                                          logging_steps=10, save_steps=10, learning_rate=2e-4, fp16=False, do_train=True, do_eval=False, do_predict=False)
+    # print(data_args)
+    # print(training_args)
     # Setup logging
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -155,6 +155,14 @@ def main():
             "labels": []
         }
 
+        # Qwen2特殊处理
+        bos = tokenizer.eos_token_id  # 用eos替代不存在的bos
+        eos = tokenizer.eos_token_id
+        pad = tokenizer.pad_token_id
+
+        max_seq_length = data_args.max_source_length + data_args.max_target_length + 1 # 保留给bos
+
+
         for i in range(len(examples[prompt_column])):
             if examples[prompt_column][i] and examples[response_column][i]:
                 # 1. 构造输入输出
@@ -172,18 +180,15 @@ def main():
                 b_ids = b_ids[:max_b_len]
 
                 # 4. 添加特殊token并拼接
-                # TODO 这里报错，因为tokenizer.bos_token_id为None
-                input_ids = [tokenizer.bos_token_id] + a_ids + [tokenizer.eos_token_id] + b_ids + [tokenizer.eos_token_id]
+                input_ids = [bos] + a_ids + [eos] + b_ids + [eos]
 
                 # 5. 创建labels（-100表示忽略loss计算）
-                labels = [-100] * (len(a_ids) + 2) + b_ids + [tokenizer.eos_token_id]  # +2对应bos和第一个eos
+                labels = [-100] * (len(a_ids) + 2) + b_ids + [eos]  # +2对应bos和第一个eos
 
-                # 6. 手动填充到相同长度
-                total_length = data_args.max_source_length + data_args.max_target_length + 3  # bos + 2*eos
-                pad_len = total_length - len(input_ids)
-                input_ids = input_ids + [tokenizer.pad_token_id] * pad_len
+                pad_len = max_seq_length - len(input_ids)
+                input_ids = input_ids + [pad] * pad_len
                 labels = labels + [-100] * pad_len  # 用-100填充标签的padding部分
-                attention_mask = [1] * (len(input_ids) - pad_len) + [0] * pad_len
+                attention_mask = [1] * (max_seq_length - pad_len) + [0] * pad_len  # 精确对应实际长度
 
                 model_inputs["input_ids"].append(input_ids)
                 model_inputs["attention_mask"].append(attention_mask)
