@@ -1,0 +1,30 @@
+train:
+  model_path: /root/autodl-fs/data2/root/.cache/modelscope/hub/models--Qwen--Qwen2.5-7B-Instruct/snapshots/a09a35458c702b33eeacc393d103063234e8bc28
+  train_data_path: /root/TCM-NER/datasets/sft/train.jsonl
+  eval_data_path: /root/TCM-NER/datasets/sft/test.jsonl
+  save_path: ./output/weights
+  model_type: qwen
+  input_max_length: 128
+  output_max_length: 64
+  train_batch_size: 1
+  eval_batch_size: 8
+  epochs: 5
+  val_check_interval:
+  lr: 5.e-5
+  seed: 123
+  do_train: false
+  output_entity_scores: true
+  peft_model_path: /root/autodl-fs/data2/models/Qwen2.5-7B/TCM-NER-Qwen25-7B-lora-2e-4/checkpoint-492
+
+peft:
+  peft_type: lora
+  lora_config:
+    r: 8
+    lora_alpha: 8
+    lora_dropout: 0.1
+#    target_modules: ["query_key_value","dense","dense_h_to_4h","dense_4h_to_h"]
+    target_modules: ["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"]
+  ptuning_config:
+    num_virtual_tokens: 10
+    encoder_reparameterization_type: MLP
+
